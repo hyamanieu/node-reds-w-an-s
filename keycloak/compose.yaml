@@ -1,0 +1,63 @@
+version: '3.8'
+
+
+
+volumes:
+  mysql_data:
+      driver: local
+
+
+services:
+  mysqlkc:
+      image: mysql:5.7
+      restart: always
+      volumes:
+        - mysql_data:/var/lib/mysql
+      environment:
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: keycloak
+        MYSQL_USER: keycloak
+        MYSQL_PASSWORD: replaceme
+      networks:
+        - keycloak
+      labels:
+        - 'traefik.enable=false'
+  keycloak:
+      image: jboss/keycloak:16.1.1
+      restart: always
+      environment:
+        DB_VENDOR: MYSQL
+        DB_ADDR: mysqlkc
+        DB_DATABASE: keycloak
+        DB_USER: keycloak
+        DB_PASSWORD: replaceme
+        KEYCLOAK_USER: ${KEYCLOAK_USER:?Set keycloak admin}
+        KEYCLOAK_PASSWORD: ${KEYCLOAK_PASSWORD:?Set keycloak admin password}
+        PROXY_ADDRESS_FORWARDING: 'true'
+        KC_HOSTNAME: keycloak.${DOMAINNAME:?Export domaine name!}    
+        KC_HEALTH_ENABLED: 'true'  
+        KEYCLOAK_LOGLEVEL: DEBUG
+      command: ["-Djboss.http.port=80"]
+      depends_on:
+        - mysqlkc
+      links:
+        - mysqlkc
+      networks:
+        - traefik-proxy
+        - keycloak
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-proxy"
+        - "traefik.http.routers.auth-https.entrypoints=websecure"
+        - "traefik.http.routers.auth-https.rule=Host(`keycloak.${DOMAINNAME:?Export domaine name!}`)"
+        - "traefik.http.routers.auth-https.tls=true"
+        - "traefik.http.routers.auth-https.tls.certresolver=letsencrypt"
+        - "traefik.http.services.auth-https.loadbalancer.server.port=80" # set port the container listens to
+        - "traefik.http.routers.auth-https.middlewares=SslHeader@file"
+
+networks:
+
+  keycloak:
+  traefik-proxy:
+    name: traefik-proxy
+    external: true

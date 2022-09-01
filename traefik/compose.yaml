@@ -1,0 +1,48 @@
+version: '3.8'
+
+volumes:
+  acme:
+    external: true
+
+services:
+  traefik:
+    image: traefik:2.6
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    environment:
+      TRAEFIK_PROVIDERS_DOCKER_DEFAULTRULE: "Host(`{{ trimPrefix `/` .Name }}${DOMAINNAME}`)"
+    env_file:
+      - ../.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yaml:/traefik.yaml:ro
+      - ./conf/:/etc/traefik/conf
+      - acme:/shared/
+    labels:
+      - "traefik.enable=true"
+
+      # define basic auth middleware for dashboard. Comment out if you don't need it.
+      - "traefik.http.middlewares.traefik-auth.basicauth.removeheader=true"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_BASIC_AUTH:?basic auth not set for dashboard}"
+      
+
+      # define traefik dashboard router and service
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAINNAME:?Export domaine name!}`)" # change hostname!
+      - "traefik.http.routers.traefik.service=api@internal"
+
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.middlewares=SslHeader@file,traefik-auth" #secHeaders@file"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+    networks:
+      - traefik-proxy
+
+
+networks:
+  traefik-proxy:
+    external: true
+    name: traefik-proxy
+  traefik-internal:
