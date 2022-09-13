@@ -7,11 +7,11 @@ volumes:
 services:
   traefik:
     image: traefik:2.6
+    container_name: traefik
     restart: always
     ports:
       - 80:80
       - 443:443
-      - 8080:8080
     environment:
       TRAEFIK_PROVIDERS_DOCKER_DEFAULTRULE: "Host(`{{ trimPrefix `/` .Name }}${DOMAINNAME}`)"
     env_file:
@@ -39,10 +39,30 @@ services:
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
     networks:
       - traefik-proxy
+      - default
 
+  index:
+    build: 
+      context: ./
+      dockerfile: ./index_fastapi.Dockerfile
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.index-https.entrypoints=websecure"
+      - "traefik.http.routers.index-https.rule=Host(`index.${DOMAINNAME:?Export domaine name!}`)"
+      - "traefik.http.routers.index-https.tls=true"
+      - "traefik.http.routers.index-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.index-https.middlewares=SslHeader@file"
+      - "traefik.http.services.index-https.loadbalancer.server.port=80" # set port the container listenes to
+    links:
+      - "traefik:traefik"
+    networks:
+      - traefik-proxy
+      - default
 
 networks:
   traefik-proxy:
     external: true
     name: traefik-proxy
-  traefik-internal:

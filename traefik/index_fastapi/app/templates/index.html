@@ -1,0 +1,27 @@
+<html>
+<head>
+    <title>Nodered applications</title>
+    <meta charset="utf-8">
+    <link href="static/index.css" rel="stylesheet">
+    <link href="static/favicon.bmp" rel="icon"  type= "image/bmp">
+</head>
+<body>
+    <h1>Accessible Nodered applications</h1>
+    <h2>Node red examples</h2>
+    {% for url, metadata in urls.items() %}
+    <a class="link_microservice" href="{{url}}">
+        {{ metadata.name }}
+        <ul>
+            <li><b>Write access users:</b> <span class="badge">{{metadata.keycloak_role}}</span></li>
+            
+            <li><b>Status:</b> {{metadata.status}}</li>
+            
+            <li><b>URL:</b> {{url}}</li>
+            
+            <li><b>Repo:</b> {{metadata.repository}}</li>
+        </ul>
+    </a>
+    {% endfor %}
+
+</body>
+</html>

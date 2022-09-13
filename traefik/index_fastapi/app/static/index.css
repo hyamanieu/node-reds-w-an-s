@@ -1,0 +1,44 @@
+a.link_microservice {
+    text-decoration: none;
+    border-radius: 25px;
+    background: #73AD21;
+    padding: 20px;
+    margin: 20px;
+    font-size: 2.5em;
+    color: #000;
+    display: block;
+}
+
+@counter-style circled-alpha {
+    system: fixed;
+    symbols: "\1F477" "\1F3ED" "\1F3C4" "\1F4D2" Ⓓ Ⓔ Ⓕ Ⓖ Ⓗ Ⓘ Ⓙ Ⓚ Ⓛ Ⓜ Ⓝ Ⓞ Ⓟ Ⓠ Ⓡ Ⓢ Ⓣ Ⓤ Ⓥ Ⓦ Ⓧ Ⓨ Ⓩ;
+    suffix: " ";
+  }
+  
+a.link_microservice>ul {
+    border-radius: 5px;
+    background: #8c7aec;    
+    padding: 1px;
+    margin: 0px;
+    font-size: .5em;
+    list-style-position: inside;
+    list-style-type: circled-alpha;
+}
+
+
+a.link_microservice>ul>li {
+}
+
+a.link_microservice:hover {
+    background: #304e06;
+    color: #fff;
+}
+
+span.badge {
+    border-radius: 5px;
+    background: #420847;
+    padding: 1px;
+    margin: 3px;
+    font-size: 1em;
+    color: #fff;
+}
