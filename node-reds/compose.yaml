@@ -1,0 +1,124 @@
+version: "3.8"
+
+volumes:
+  nodered-playground:
+    driver: local
+  nodered-develop:
+    driver: local
+  nodered-production:
+    driver: local
+
+
+networks:
+  traefik-proxy:
+    external: true
+    name: traefik-proxy
+
+services:
+  nodered_playground:
+    container_name: nodered-playground
+    restart: on-failure #run.sh does restart
+    build: 
+      dockerfile: ./nodered_mes.Dockerfile
+      context: .
+      ssh: 
+        - default #adding host ssh during build time
+    environment:
+      - TZ=Europe/Berlin
+      - NODE_RED_ENABLE_SAFE_MODE=true # Flows will NOT start on reboot
+      - NODE_RED_ENABLE_PROJECTS=true
+      - KEYCLOAK_NODERED_CLIENT_SECRET=${KEYCLOAK_NODERED_CLIENT_SECRET:?Missing client secret from keycloak}
+      - DOMAINNAME=${DOMAINNAME}
+      - GIT_DISCOVERY_ACROSS_FILESYSTEM=1
+      - PORT=80
+      - SSH_AUTH_SOCK=/ssh-agent #path to SSH socket
+      - ACCESSURL=https://playground.${DOMAINNAME:?Export domaine name!}   
+    volumes:
+      - ./settings.js:/data/settings.js:ro
+      - nodered-playground:/data
+      - $SSH_AUTH_SOCK:/ssh-agent:ro # Forward local machine SSH key to docker
+    labels:
+    # Repo Must have the exact same name as the container
+      - "node-red.project.url=${GIT_ORGANIZATION_LINK}/nodered-playground.git" 
+      - "traefik.enable=true"
+      - "traefik.http.routers.playground-https.entrypoints=websecure"
+      - "traefik.http.routers.playground-https.rule=Host(`playground.${DOMAINNAME:?Export domaine name!}`)"
+      - "traefik.http.routers.playground-https.tls=true"      
+      - "traefik.http.routers.playground-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.playground-https.middlewares=SslHeader@file"
+      - "traefik.http.services.playground-https.loadbalancer.server.port=80" # set port the container listenes to
+    networks:
+      - traefik-proxy
+
+
+  nodered_develop:
+    container_name: nodered-develop
+    restart: on-failure #run.sh does restart
+    build: 
+      dockerfile: ./nodered_mes.Dockerfile
+      context: .
+      ssh: 
+        - default #adding host ssh during build time
+    environment:
+      - TZ=Europe/Berlin
+      - NODE_RED_ENABLE_SAFE_MODE=true # Flows will NOT start on reboot
+      - NODE_RED_ENABLE_PROJECTS=true
+      - KEYCLOAK_NODERED_CLIENT_SECRET=${KEYCLOAK_NODERED_CLIENT_SECRET:?Missing client secret from keycloak}
+      - DOMAINNAME=${DOMAINNAME}
+      - GIT_DISCOVERY_ACROSS_FILESYSTEM=1
+      - PORT=80
+      - KEYCLOAK_WRITER_ROLE=developper
+      - SSH_AUTH_SOCK=/ssh-agent #path to SSH socket
+      - ACCESSURL=https://develop.${DOMAINNAME:?Export domaine name!}   
+    volumes:
+      - ./settings.js:/data/settings.js:ro
+      - nodered-develop:/data
+      - $SSH_AUTH_SOCK:/ssh-agent:ro # Forward local machine SSH key to docker
+    labels:
+      - "node-red.project.url=${GIT_ORGANIZATION_LINK}/nodered-develop.git"
+      - "traefik.enable=true"
+      - "traefik.http.routers.develop-https.entrypoints=websecure"
+      - "traefik.http.routers.develop-https.rule=Host(`develop.${DOMAINNAME:?Export domaine name!}`)"
+      - "traefik.http.routers.develop-https.tls=true"
+      - "traefik.http.routers.develop-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.develop-https.middlewares=SslHeader@file"
+      - "traefik.http.services.develop-https.loadbalancer.server.port=80" # set port the container listens to
+    networks:
+      - traefik-proxy
+
+      
+  nodered_production:
+    container_name: nodered-production
+    restart: on-failure #run.sh does restart
+    build: 
+      dockerfile: ./nodered_mes.Dockerfile
+      context: .
+      ssh: 
+        - default #adding host ssh during build time
+    environment:
+      - TZ=Europe/Berlin
+      - NODE_RED_ENABLE_SAFE_MODE=false #Flows will start on reboot
+      - NODE_RED_ENABLE_PROJECTS=true
+      - KEYCLOAK_NODERED_CLIENT_SECRET=${KEYCLOAK_NODERED_CLIENT_SECRET:?Missing client secret from keycloak}
+      - DOMAINNAME=${DOMAINNAME}
+      - GIT_DISCOVERY_ACROSS_FILESYSTEM=1
+      - PORT=80
+      - KEYCLOAK_WRITER_ROLE=production-users
+      - SSH_AUTH_SOCK=/ssh-agent #path to SSH socket
+      - ACCESSURL=https://production.${DOMAINNAME:?Export domaine name!}/production
+      - HTTPROOT=/production
+    volumes:
+      - ./settings.js:/data/settings.js:ro
+      - nodered-production:/data
+      - $SSH_AUTH_SOCK:/ssh-agent:ro # Forward local machine SSH key to docker
+    labels:
+      - "node-red.project.url=${GIT_ORGANIZATION_LINK}/nodered-production.git"
+      - "traefik.enable=true"
+      - "traefik.http.routers.production-https.entrypoints=websecure"
+      - "traefik.http.routers.production-https.rule=(Host(`production.${DOMAINNAME:?Export domaine name!}`) && PathPrefix(`/production`))"
+      - "traefik.http.routers.production-https.tls=true"
+      - "traefik.http.routers.production-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.production-https.middlewares=SslHeader@file"
+      - "traefik.http.services.production-https.loadbalancer.server.port=80" # set port the container listenes to
+    networks:
+      - traefik-proxy

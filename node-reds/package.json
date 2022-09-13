@@ -1,0 +1,26 @@
+{
+    "name": "node-red-project",
+    "description": "A Node-RED Project",
+    "version": "0.0.1",
+    "private": true,
+    "scripts": {
+        "start": "node $NODE_OPTIONS node_modules/node-red/red.js $FLOWS"
+    },
+    "dependencies": {
+        "node-red": "^3.0.2",
+        "node-red-contrib-ftp-sftp": "~1.8.8",
+        "node-red-contrib-moment": "~4.0.0",
+        "node-red-contrib-oracledb-mod": "~0.6.1",
+        "node-red-contrib-s7": "~3.0.0-beta.3",
+        "node-red-contrib-s7comm": "~1.1.6",
+        "node-red-dashboard": "3.1.7",
+        "node-red-node-email": "1.15.1",
+        "node-red-node-mysql": "1.0.1",
+        "node-red-contrib-cip-ethernet-ip": "1.1.3",
+        "node-red-contrib-buffer-parser": "3.2.2",
+        "node-red-contrib-config": "1.2.1",
+        "node-red-contrib-excelsheets": "1.1.1",
+        "node-red-contrib-mcprotocol": "1.2.1",
+        "node-red-node-ui-table": "0.3.12"
+    }
+}

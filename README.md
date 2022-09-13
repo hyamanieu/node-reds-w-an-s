@@ -32,14 +32,30 @@ These services will all be running on docker, so almost everything you need is c
 
 This stack is tested on the following configuration, but similar setups may work:
 
-- Debian 10 & Ubuntu 20.04
+**Mandatory:**
+
+- Debian-like systems:
+  - Debian 11 (note for 10, you'll need to update `jsonpointer` to version >=2)
+  - or Ubuntu 20.04
 - `docker` version 20.10.17
 - `docker compose` 2.6.0 (note the lack of dash)
 - a domain name directing to your host, although you may make it work on debian/ubuntu with self-signed certificates & proper configuration (topic unaddressed here)
 
+**Optional:**
+
+- `gh` or GitHub CLI, see [instructions for installing](https://github.com/cli/cli#installation) ([linux](https://github.com/cli/cli/blob/trunk/docs/install_linux.md)). This is necessary for creating on the fly the repositories requires by new NodeRed projects on Github.
+
 ## Getting started
 
 This repository may run as is, although it is meant to be modified to fit your use case. Environmental variables are used for critical information (like the domain name). However some intrinsic passwords of some backends will need to be updated. Review them in each `compose.yaml` file.
+
+Here are the steps you will need to follow for this example node-red stack to function:
+
+1. create an `.env` file
+2. create a `nodered` Realm in Keycloak
+3. initialize node-red
+4. start
+
 
 ### create an `.env` file
 
@@ -50,10 +66,45 @@ Two important keys are:
 - `DOMAINNAME`: your domaine name, e.g. example.com
 - `DOMAINEMAIL`: email address you will use for [Let's Encrypt](https://letsencrypt.org)
 
+### create a `nodered` Realm in Keycloak
+
+First start keycloak:
+
+```sh
+set -a
+. .env
+set +a
+docker compose -f ./keycloak/compose.yaml up -d
+```
+
+then access keycloak (url: https://keycloak.${DOMAINNAME}) and log in with the admin user you've entered in the `.env` file. 
+
+Hover on `master` on the top right, click on add a new Realm and name it **exactly** `nodered`.
+
+Under Clients, click on Create and add `nodered` as client id.
+
+### initialize the node-red instances
+
+Review the [node-reds compose file](node-reds/compose.yaml) and adapt to your situation. You can leave it as is to create three containers: one for all (playground), one for developpers only (develop), and one for production users (production).
+
+Simply run `./node-reds/init_and_run.sh`. This will
+
+- export your environment variables
+- attach an ssh agent with access to the git host you've selected
+- build and start the node red containers you configured.
+- if you use github and the corresponding repository do not exist, it will create them using `gh`
+- if you don't use github or haven't configured `gh`, you will need to add the repository manualy for each github image. Each repository must be exactly named as the image.
+- it will clone the corresponding repositories in each container
+- if not yet set up, it will ask for a node red secret add to your project. This is necessary to encrypt all credentials as they will be saved on the repository.
+
+### Start
+
 Then you can run:
 
 ```sh
-export .env
+set -a
+. .env
+set +a
 docker compose -f ./<service>/compose.yaml up -d #execute as many times as needed
 ```
 
