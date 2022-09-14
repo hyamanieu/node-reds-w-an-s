@@ -88,13 +88,13 @@ First start keycloak:
 docker compose -f ./keycloak/compose.yaml up -d
 ```
 
-then access keycloak (url: https://keycloak.${DOMAINNAME}) and log in with the admin user you've entered in the `.env` file. 
+then access keycloak (url: https://keycloak.${DOMAINNAME}) and log in with the admin user you've entered in the `.env` file.
 
-Hover on `master` on the top right, click on add a new Realm and name it **exactly** `nodered`.
+Hover on `master` on the top left, there should be a pre-configured `nodered` realm with a `nodered` client and roles.
 
-Under Clients, click on Create and add `nodered` as client id.
+Find the credential secret of the `nodered` client and add it to your `.env` file for `KEYCLOAK_NODERED_CLIENT_SECRET`.
 
-[TODO: importing realm instead of configuring]
+please refer to Keycloak documentation if you want to connect this realm to your identity providers (Microsoft, Github, etc).
 
 ### initialize the Node-RED instances
 
@@ -110,9 +110,9 @@ Simply run `./Node-REDs/init_and_run.sh`. This will
 - it will clone the corresponding repositories in each container
 - if not yet set up, it will ask for a node red secret add to your project. This is necessary to encrypt all credentials as they will be saved on the repository.
 
-### Start
+### Start working
 
-At this point, `index.${DOMAINNAME}` should show you the list of all node red instances, their health, who may access it, and with which repo it is connected with. 
+At this point, `index.${DOMAINNAME}` should show you the list of all node red instances, their health, who may access it, and with which repo it is connected with.
 ![Landing page](./viewable_nodereds.png)
 
 Clicking on a box should direct you to the Node-RED instance.

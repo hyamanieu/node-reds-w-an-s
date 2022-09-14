@@ -29,7 +29,8 @@ module.exports = {
                 publicClient: "false",
                 clientSecret: process.env.KEYCLOAK_NODERED_CLIENT_SECRET,
                 sslRequired: "external",
-                authServerURL: "https://keycloak."+process.env.DOMAINNAME+"/auth",
+                // authServerURL: "https://keycloak."+process.env.DOMAINNAME+"/auth",                
+                authServerURL: "https://keycloak."+process.env.DOMAINNAME,
                 callbackURL: process.env.ACCESSURL+"/auth/strategy/callback",
                 verify: function(token, tokenSecret, profile, done) {
                     //console.log('profile:\n', profile);

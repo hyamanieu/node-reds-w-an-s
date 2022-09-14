@@ -9,6 +9,7 @@ providers:
     watch: true
     exposedByDefault: true
     swarmMode: false
+    network: traefik-proxy
   file:
     directory: /etc/traefik/conf/
     watch: true

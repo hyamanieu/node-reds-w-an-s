@@ -22,22 +22,35 @@ services:
         - keycloak
       labels:
         - 'traefik.enable=false'
+
   keycloak:
-      image: jboss/keycloak:16.1.1
+      # image: jboss/keycloak:16.1.1
+      build:
+        context: .
+        dockerfile: .Dockerfile
+        target: prod
       restart: always
       environment:
-        DB_VENDOR: MYSQL
-        DB_ADDR: mysqlkc
-        DB_DATABASE: keycloak
-        DB_USER: keycloak
-        DB_PASSWORD: replaceme
-        KEYCLOAK_USER: ${KEYCLOAK_USER:?Set keycloak admin}
-        KEYCLOAK_PASSWORD: ${KEYCLOAK_PASSWORD:?Set keycloak admin password}
+        # DB_VENDOR: MYSQL
+        KC_DB: mysql
+        # DB_ADDR: mysqlkc
+        KC_DB_URL_HOST: mysqlkc
+        # DB_DATABASE: keycloak
+        KC_DB_URL_DATABASE: keycloak
+        # DB_USER: keycloak
+        # DB_PASSWORD: replaceme
+        KC_DB_USERNAME: keycloak
+        KC_DB_PASSWORD: replaceme
+        # KEYCLOAK_USER: ${KEYCLOAK_USER:?Set keycloak admin}
+        # KEYCLOAK_PASSWORD: ${KEYCLOAK_PASSWORD:?Set keycloak admin password}
+        KEYCLOAK_ADMIN: ${KEYCLOAK_USER:?Set keycloak admin}
+        KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD:?Set keycloak admin password}
         PROXY_ADDRESS_FORWARDING: 'true'
         KC_HOSTNAME: keycloak.${DOMAINNAME:?Export domaine name!}    
         KC_HEALTH_ENABLED: 'true'  
         KEYCLOAK_LOGLEVEL: DEBUG
-      command: ["-Djboss.http.port=80"]
+        KC_PROXY: edge
+      command: ["start","--import-realm"]
       depends_on:
         - mysqlkc
       links:
@@ -52,7 +65,7 @@ services:
         - "traefik.http.routers.auth-https.rule=Host(`keycloak.${DOMAINNAME:?Export domaine name!}`)"
         - "traefik.http.routers.auth-https.tls=true"
         - "traefik.http.routers.auth-https.tls.certresolver=letsencrypt"
-        - "traefik.http.services.auth-https.loadbalancer.server.port=80" # set port the container listens to
+        - "traefik.http.services.auth-https.loadbalancer.server.port=8080" # set port the container listens to
         - "traefik.http.routers.auth-https.middlewares=SslHeader@file"
 
 networks:
