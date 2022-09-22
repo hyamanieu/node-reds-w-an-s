@@ -98,15 +98,15 @@ please refer to Keycloak documentation if you want to connect this realm to your
 
 ### initialize the Node-RED instances
 
-Review the [Node-REDs compose file](Node-REDs/compose.yaml) and adapt to your situation. You can leave it as is to create three containers: one for all (playground), one for developpers only (develop), and one for production users (production).
+Review the [Node-REDs compose file](node-reds/compose.yaml) and adapt to your situation. You can leave it as is to create three containers: one for all (playground), one for developpers only (develop), and one for production users (production).
 
-Simply run `./Node-REDs/init_and_run.sh`. This will
+Simply run `./node-reds/init_and_run.sh`. This will
 
 - export your environment variables
 - attach an ssh agent with access to the git host you've selected
-- build and start the node red containers you configured.
+- build and start the Node-RED containers you configured.
 - if you use github and the corresponding repository do not exist, it will create them using `gh`
-- if you don't use github or haven't configured `gh`, you will need to add the repository manualy for each github image. Each repository must be exactly named as the image.
+- if you don't use github or haven't configured `gh`, you will need to add the repository manualy for each Node-RED image. Each repository must be exactly named as the image.
 - it will clone the corresponding repositories in each container
 - if not yet set up, it will ask for a node red secret add to your project. This is necessary to encrypt all credentials as they will be saved on the repository.
 
