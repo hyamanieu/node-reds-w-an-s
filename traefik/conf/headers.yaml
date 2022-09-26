@@ -14,7 +14,7 @@ http:
         STSIncludeSubdomains: true
         STSPreload: true
         #ContentSecurityPolicy: default-src *; img-src *
-        ContentSecurityPolicy: default-src 'self' 'unsafe-inline'
+        ContentSecurityPolicy: default-src 'self' 'unsafe-inline' *.{{env "DOMAINNAME"}}; script-src 'self' 'unsafe-inline' 'unsafe-eval' grafana.{{env "DOMAINNAME"}}
         CustomFrameOptionsValue: SAMEORIGIN
         ReferrerPolicy: same-origin
         PermissionsPolicy: vibrate 'self'

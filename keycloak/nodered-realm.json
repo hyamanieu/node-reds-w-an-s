@@ -659,7 +659,8 @@
       "redirectUris": [
         "https://playground.${DOMAINNAME:?Export domaine name!}/auth/strategy/callback",
         "https://develop.${DOMAINNAME:?Export domaine name!}/auth/strategy/callback",
-        "https://production.${DOMAINNAME:?Export domaine name!}/production/auth/strategy/callback"
+        "https://production.${DOMAINNAME:?Export domaine name!}/production/auth/strategy/callback",
+        "https://grafana.${DOMAINNAME:?Export domaine name!}/login/generic_oauth"
       ],
       "webOrigins": [],
       "notBefore": 0,

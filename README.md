@@ -2,8 +2,6 @@
 
 A how-to or template for managing several node red services using git-based project
 
-NB: THIS WORK IS STILL IN PROGRESS
-
 ## Introduction
 
 If you're looking for an open-source platform:
@@ -18,13 +16,13 @@ then you landed on the right page!
 
 ## Overview
 
-These are the tools used here (work in progress if unchecked):
+These are the tools used here:
 
 - [X] [Node-RED](https://github.com/Node-RED/Node-RED-docker) is used for our low code development platforms (with an S!). It has a large range of modules compatible with most data entries, including the most modern & standard APIs (Rest, MQTT, OPC-UA), or [legacy industrial APIs of old school PLC (Mitsubishi, Allen Bradley, Omron, Siemens, etc)](https://flows.nodered.org/search?term=PLC&type=node). Most importantly, it takes little effort to have code running in production: no DevOps required!
 - [X] [FastAPI](https://github.com/tiangolo/fastapi) is used to make a very simple landing page showing you available Node-RED instances. Flask could be a good alternative to FastAPI.
 - [X] [Keycloak](https://github.com/keycloak) is used to manage users. It is compatible with common identity providers such as Microsoft Azure Active Directory or Google.
 - [X] [Traefik](https://github.com/traefik/traefik) is proxying the various services over TLS thanks to Let's Encrypt
-- [ ] [Grafana & Prometheus stack](https://github.com/vegasbrianc/prometheus) for monitoring everything
+- [X] [Grafana & Prometheus stack](https://github.com/vegasbrianc/prometheus) for monitoring everything
 
 These services will all be running on docker, so almost everything you need is code.
 
@@ -44,6 +42,7 @@ This stack is tested on the following configuration, but similar setups may work
 **Optional:**
 
 - `gh` or GitHub CLI, see [instructions for installing](https://github.com/cli/cli#installation) ([linux](https://github.com/cli/cli/blob/trunk/docs/install_linux.md)). This is necessary for creating on the fly the repositories required by new NodeRed projects on Github.
+- At least 4GB of RAM for a VPS is recommanded.
 
 ## Getting started
 
@@ -56,7 +55,6 @@ Here are the steps you will need to follow for this example Node-RED stack to fu
 3. create a `nodered` Realm in Keycloak
 4. initialize Node-RED
 5. start working
-
 
 ### create an `.env` file
 
@@ -88,7 +86,7 @@ First start keycloak:
 docker compose -f ./keycloak/compose.yaml up -d
 ```
 
-then access keycloak (url: https://keycloak.${DOMAINNAME}) and log in with the admin user you've entered in the `.env` file.
+then access keycloak (url: `https://keycloak.${DOMAINNAME}`) and log in with the admin user you've entered in the `.env` file.
 
 Hover on `master` on the top left, there should be a pre-configured `nodered` realm with a `nodered` client and roles.
 
@@ -120,13 +118,17 @@ You can start working on your flows [AND use version control with git](https://n
 
 On first log in, it will require to load the first project files and to retype your Node-RED credential secret.
 
-<!-- Then you can run:
+## Monitoring
 
-```sh
-set -a
-. .env
-set +a
-docker compose -f ./<service>/compose.yaml up -d #execute as many times as needed
-```
+More information can be found under [the monitoring readme](./monitoring/README.md).
 
-Where `<service>` are the folders containing available docker micro services. -->
+## Expanding beyond this repository
+
+If you fork or build on top of it, kindly ping me!
+
+There are several axes for improving this stack which may or may not be done within this repository:
+
+- Add an SQL or other data storage container to attach to the development or playground instances. By playing with configuration files, copying flows from one instance to a production instance should adjust automatically.
+Note: I would not advise using such a container for production instances if you intend to make realiable data lakes, but rather ask IT professionals.
+- Make it compatible with docker swarm as is done with [the grafana/prometheus stack by Brian Christner](https://github.com/vegasbrianc/prometheus). It can then scale as your organization grows.
+- The docker API, the GitHub CLI, and the GitLab API allow for spawning git-controlled Node-RED instances as needed. Therefore a real front end for inializing and administrating can be made, turning this repository into a real application. It will not require as much playing with env variables.

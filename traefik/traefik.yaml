@@ -38,3 +38,5 @@ certificatesResolvers:
       httpChallenge:
         entryPoint: web
       tlsChallenge: {}
+metrics:
+  prometheus: {}

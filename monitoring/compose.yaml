@@ -1,0 +1,170 @@
+version: '3.9'
+
+volumes:
+    prometheus_data: {}
+    grafana_data: {}
+
+networks:
+  traefik-proxy:
+    external: true
+    name: traefik-proxy
+  monitor-net:
+    external: false
+    name: inbound
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.36.2
+    volumes:
+      - ./prometheus/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yaml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - 9090:9090
+    links:
+      - cadvisor:cadvisor
+      - alertmanager:alertmanager
+    #  - pushgateway:pushgateway
+    depends_on:
+      - cadvisor
+    #  - pushgateway
+    networks:
+      - monitor-net
+      - traefik-proxy
+    restart: on-failure
+    labels:
+      - "traefik.enable=false" # this desactivate proxying. Set to true to access it.
+      - "traefik.http.routers.prometheus-https.entrypoints=websecure"
+      - "traefik.http.routers.prometheus-https.rule=Host(`prometheus.${DOMAINNAME:?Export domaine name!}`)"
+      - "traefik.http.routers.prometheus-https.tls=true"      
+      - "traefik.http.routers.prometheus-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.prometheus-https.middlewares=SslHeader@file"
+      - "traefik.http.services.prometheus-https.loadbalancer.server.port=9090" # set port the container listenes to
+      - "traefik.docker.network=traefik-proxy"
+#    deploy:
+#      placement:
+#        constraints:
+#          - node.hostname == ${HOSTNAME}
+
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    ports:
+      - 9100:9100
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+      - /:/host:ro,rslave
+    command: 
+      - '--path.rootfs=/host'
+      - '--path.procfs=/host/proc' 
+      - '--path.sysfs=/host/sys'
+      - --collector.filesystem.ignored-mount-points
+      - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
+    networks:
+      - monitor-net
+    restart: on-failure
+    labels:
+      - "traefik.enable=false"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.node-exporter-https.entrypoints=websecure"
+    #   - "traefik.http.routers.node-exporter-https.rule=Host(`node-exporter.${DOMAINNAME:?Export domaine name!}`)"
+    #   - "traefik.http.routers.node-exporter-https.tls=true"      
+    #   - "traefik.http.routers.node-exporter-https.tls.certresolver=letsencrypt"
+    #   - "traefik.http.routers.node-exporter-https.middlewares=SslHeader@file"
+    #   - "traefik.http.services.node-exporter-https.loadbalancer.server.port=9100" # set port the container listenes to
+    #   - "traefik.docker.network=traefik-proxy"
+    # deploy:
+    #   mode: global
+
+  alertmanager:
+    image: prom/alertmanager
+    ports:
+      - 9093:9093
+    volumes:
+      - ./alertmanager/:/etc/alertmanager/
+    networks:
+      - monitor-net
+    restart: always
+    command:
+      - '--config.file=/etc/alertmanager/config.yaml'
+      - '--storage.path=/alertmanager'
+    labels:
+      - "traefik.enable=false"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.alertmanager-https.entrypoints=websecure"
+    #   - "traefik.http.routers.alertmanager-https.rule=Host(`alertmanager.${DOMAINNAME:?Export domaine name!}`)"
+    #   - "traefik.http.routers.alertmanager-https.tls=true"      
+    #   - "traefik.http.routers.alertmanager-https.tls.certresolver=letsencrypt"
+    #   - "traefik.http.routers.alertmanager-https.middlewares=SslHeader@file"
+    #   - "traefik.http.services.alertmanager-https.loadbalancer.server.port=9093" # set port the container listenes to
+    #   - "traefik.docker.network=traefik-proxy"
+#    deploy:
+#      placement:
+#        constraints:
+#          - node.hostname == ${HOSTNAME}
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 8080:8080
+    networks:
+      - monitor-net
+    restart: on-failure
+    labels:
+      - "traefik.enable=false"
+    # deploy:
+    #   mode: global
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.monitoring
+    networks:
+      - traefik-proxy
+      - monitor-net
+    user: "472"
+    restart: always
+    environment:
+      # - GF_LOG_LEVEL=debug
+      # - GF_LOG_FILTERS=oauth:info
+      - GF_SERVER_DOMAIN=grafana.${DOMAINNAME:?Export domaine name!}
+      - GF_SERVER_ROOT_URL=https://grafana.${DOMAINNAME:?Export domaine name!}
+      - GF_SERVER_PROTOCOL=http
+      - GF_SERVER_ROUTER_LOGGING='true'
+      - GF_AUTH_GENERIC_OAUTH_TLS_SKIP_VERIFY_INSECURE=true
+      - GF_AUTH_GENERIC_OAUTH_ENABLED=true
+      - GF_AUTH_GENERIC_OAUTH_NAME=Login Keycloak
+      - GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP=true
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_ID=nodered
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=${KEYCLOAK_NODERED_CLIENT_SECRET:?Client secret missing from env}
+      - GF_AUTH_GENERIC_OAUTH_SCOPES=profile roles
+      - GF_AUTH_GENERIC_OAUTH_AUTH_URL=https://keycloak.${DOMAINNAME:?Export domaine name!}/realms/nodered/protocol/openid-connect/auth
+      - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=https://keycloak.${DOMAINNAME:?Export domaine name!}/realms/nodered/protocol/openid-connect/token
+      - GF_AUTH_GENERIC_OAUTH_API_URL=https://keycloak.${DOMAINNAME:?Export domaine name!}/realms/nodered/protocol/openid-connect/userinfo
+      - GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH=contains(resource_access.nodered.roles[*], 'production-users') && 'Admin' || contains(resource_access.nodered.roles[*], 'developper') && 'Editor' || 'Viewer'
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana-https.entrypoints=websecure"
+      - "traefik.http.routers.grafana-https.rule=Host(`grafana.${DOMAINNAME:?Export domaine name!}`)"
+      - "traefik.http.routers.grafana-https.tls=true"      
+      - "traefik.http.routers.grafana-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.grafana-https.middlewares=SslHeader@file"
+      - "traefik.http.services.grafana-https.loadbalancer.server.port=3000" # set port the container listenes to
+      - "traefik.docker.network=traefik-proxy"
