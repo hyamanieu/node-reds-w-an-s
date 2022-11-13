@@ -23,10 +23,12 @@ then
     export SSH_AUTH_SOCK=$(ls /tmp/ssh-*/agent.$(($SSH_AGENT_PID-1)))
 fi
 
+ssh-add
+
 # Make sure the key to access the various node red projects is added on the host
 echo ""
 echo "### SSH KEY STEP ###"
-ssh -T ${GIT_SSH_LINK:?Please export env vars} >> /dev/null 2>&1 #no prompt
+ssh -T -oNumberOfPasswordPrompts=0 ${GIT_SSH_LINK:?Please export env vars} >> /dev/null 2>&1 #no prompt
 COULD_CONNECT=$? # 255 if cannot connect
 if [ "$COULD_CONNECT" -eq 255 ]
 then
