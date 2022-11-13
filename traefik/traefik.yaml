@@ -28,6 +28,9 @@ entryPoints:
           permanent: true
   websecure:
     address: ':443'
+  # Ajout d'un point d'entrée sur le port 8080
+  metrics:
+    address: ":8080"
 certificatesResolvers:
   letsencrypt:
     acme:
@@ -39,4 +42,16 @@ certificatesResolvers:
         entryPoint: web
       tlsChallenge: {}
 metrics:
-  prometheus: {}
+  prometheus:
+    # Nom du point d'entrée défini au dessus
+    entryPoint: metrics
+    # On configure la latence des métriques
+    buckets:
+      - 0.1
+      - 0.3
+      - 1.2
+      - 5.0
+    # Ajout des métriques sur les points d'entrée
+    addEntryPointsLabels: true
+    # Ajout des services
+    addServicesLabels: true

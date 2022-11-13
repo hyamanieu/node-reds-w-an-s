@@ -10,5 +10,5 @@ set +a
 set -o errexit # make sure script stops in case of errors
 ./add_ssh_then_compose_up.sh --build
 ./clone_projects.sh
-./add_secret.sh
+./add_secrets.sh
 set +o errexit
